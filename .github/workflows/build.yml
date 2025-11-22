@@ -27,12 +27,12 @@ jobs:
           pip install --upgrade pip
           pip install --upgrade buildozer cython
 
-      # خطوة 4: تثبيت Apache Ant يدويًا
+      # خطوة 4: تثبيت Apache Ant (رابط حديث)
       - name: Install Apache Ant
         run: |
-          wget https://downloads.apache.org/ant/binaries/apache-ant-1.10.13-bin.tar.gz
-          tar -xzf apache-ant-1.10.13-bin.tar.gz
-          sudo mv apache-ant-1.10.13 /opt/ant
+          wget https://downloads.apache.org/ant/binaries/apache-ant-1.10.15-bin.tar.gz
+          tar -xzf apache-ant-1.10.15-bin.tar.gz
+          sudo mv apache-ant-1.10.15 /opt/ant
           echo "ANT_HOME=/opt/ant" >> $GITHUB_ENV
           echo "PATH=$ANT_HOME/bin:$PATH" >> $GITHUB_ENV
 

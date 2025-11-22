@@ -1,60 +1,50 @@
-name: Build APK
+name: Build Android APK
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
+      PATH: ${{ github.workspace }}/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$PATH
+
     steps:
-      # خطوة 1: سحب المشروع من GitHub
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      # خطوة 2: تثبيت التبعيات الأساسية
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3 python3-pip python3-setuptools git zip unzip \
-                              openjdk-17-jdk wget tar ccache
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      # خطوة 3: تثبيت Buildozer وCython بأحدث إصدار
-      - name: Install Buildozer and Cython
-        run: |
-          pip install --upgrade pip
-          pip install --upgrade buildozer cython
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install buildozer cython
 
-      # خطوة 4: تثبيت Apache Ant (رابط حديث)
-      - name: Install Apache Ant
-        run: |
-          wget https://downloads.apache.org/ant/binaries/apache-ant-1.10.15-bin.tar.gz
-          tar -xzf apache-ant-1.10.15-bin.tar.gz
-          sudo mv apache-ant-1.10.15 /opt/ant
-          echo "ANT_HOME=/opt/ant" >> $GITHUB_ENV
-          echo "PATH=$ANT_HOME/bin:$PATH" >> $GITHUB_ENV
+    - name: Install Android SDK cmdline-tools
+      run: |
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        cd $ANDROID_HOME/cmdline-tools
+        curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o cmdline-tools.zip
+        unzip -q cmdline-tools.zip
+        mv cmdline-tools latest
+        rm cmdline-tools.zip
 
-      # خطوة 5: ضبط Android SDK root
-      - name: Set ANDROID SDK root
-        run: |
-          echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
+    - name: Accept all SDK licenses
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      # خطوة 6: قبول تراخيص Android SDK تلقائيًا
-      - name: Accept Android SDK licenses
-        run: |
-          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+    - name: Install Build Tools & Platforms
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      # خطوة 7: بناء APK
-      - name: Build APK
-        run: |
-          mkdir -p bin
-          buildozer android debug
-
-      # خطوة 8: رفع APK الناتج كـ Artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: city-mover.apk
-          path: bin/*.apk
+    - name: Build APK with Buildozer
+      run: |
+        buildozer android debug

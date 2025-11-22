@@ -19,3 +19,6 @@ android.minapi = 21
 android.arch = arm64-v8a,armeabi-v7a
 android.release_artifact = .apk
 android.build_tools_version = 33.0.2
+# ملف buildozer.spec
+android.build_tools_version = 33.0.2
+android.sdk = 24

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # خطوة 1: سحب المشروع
+      # خطوة 1: سحب المشروع من GitHub
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -19,34 +19,40 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y python3 python3-pip python3-setuptools git zip unzip \
-                              openjdk-17-jdk autoconf automake libtool pkg-config \
-                              zlib1g-dev libncurses5-dev liblcms2-dev libwebp-dev \
-                              libtiff5-dev libjpeg-dev libfreetype6-dev libffi-dev \
-                              libssl-dev ccache
+                              openjdk-17-jdk wget tar ccache
 
-      # خطوة 3: تثبيت Buildozer و Cython
+      # خطوة 3: تثبيت Buildozer وCython بأحدث إصدار
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
-          pip install buildozer cython
+          pip install --upgrade buildozer cython
 
-      # خطوة 4: ضبط Android SDK root
+      # خطوة 4: تثبيت Apache Ant يدويًا
+      - name: Install Apache Ant
+        run: |
+          wget https://downloads.apache.org/ant/binaries/apache-ant-1.10.13-bin.tar.gz
+          tar -xzf apache-ant-1.10.13-bin.tar.gz
+          sudo mv apache-ant-1.10.13 /opt/ant
+          echo "ANT_HOME=/opt/ant" >> $GITHUB_ENV
+          echo "PATH=$ANT_HOME/bin:$PATH" >> $GITHUB_ENV
+
+      # خطوة 5: ضبط Android SDK root
       - name: Set ANDROID SDK root
         run: |
           echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
 
-      # خطوة 5: قبول تراخيص Android SDK
+      # خطوة 6: قبول تراخيص Android SDK تلقائيًا
       - name: Accept Android SDK licenses
         run: |
           yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      # خطوة 6: بناء APK
+      # خطوة 7: بناء APK
       - name: Build APK
         run: |
           mkdir -p bin
           buildozer android debug
 
-      # خطوة 7: رفع APK الناتج كـ Artifact
+      # خطوة 8: رفع APK الناتج كـ Artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
